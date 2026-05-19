@@ -1,4 +1,4 @@
-name: Build SubtitleTranslator IPA
+name: Build SubtitleTranslator
 on:
   push:
     branches: [ main ]
@@ -8,26 +8,48 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - name: 拉取代码
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 安装Tuist（如果你的项目用Tuist）
+      - name: List files (帮我们看项目结构)
+        run: ls -la
+
+      - name: 直接用xcodebuild编译
         run: |
-          curl -Ls https://install.tuist.io | bash
+          # 先尝试找所有的.xcodeproj文件
+          PROJECT_FILE=$(find . -name "*.xcodeproj" | head -n 1)
+          if [ -z "$PROJECT_FILE" ]; then
+            echo "没有找到.xcodeproj文件，尝试找.xcworkspace"
+            WORKSPACE_FILE=$(find . -name "*.xcworkspace" | head -n 1)
+            if [ -z "$WORKSPACE_FILE" ]; then
+              echo "❌ 既没有.xcodeproj也没有.xcworkspace，构建失败"
+              exit 1
+            else
+              echo "找到工作区: $WORKSPACE_FILE"
+              SCHEME=SubtitlesApp
+              xcodebuild archive \
+                -workspace "$WORKSPACE_FILE" \
+                -scheme "$SCHEME" \
+                -configuration Release \
+                -archivePath SubtitlesApp.xcarchive \
+                CODE_SIGN_IDENTITY="" \
+                CODE_SIGNING_REQUIRED=NO \
+                CODE_SIGNING_ALLOWED=NO
+            fi
+          else
+            echo "找到项目文件: $PROJECT_FILE"
+            SCHEME=SubtitlesApp
+            xcodebuild archive \
+              -project "$PROJECT_FILE" \
+              -scheme "$SCHEME" \
+              -configuration Release \
+              -archivePath SubtitlesApp.xcarchive \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO
+          fi
 
-      - name: 生成Xcode项目（如果用Tuist）
-        run: tuist generate
-
-      - name: 编译并打包
-        run: |
-          xcodebuild archive \
-            -scheme SubtitlesApp \
-            -configuration Release \
-            -archivePath SubtitlesApp.xcarchive \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
-
+          # 导出IPA
           xcodebuild -exportArchive \
             -archivePath SubtitlesApp.xcarchive \
             -exportPath . \
@@ -42,7 +64,7 @@ jobs:
             </dict>
             </plist>')
 
-      - name: 上传IPA文件
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: SubtitleTranslator-IPA
