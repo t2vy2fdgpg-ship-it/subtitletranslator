@@ -1,27 +1,44 @@
-name: Build iOS IPA
+name: Build My Subtitle App
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 jobs:
   build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Build & Archive
+      - name: 拉取你的代码
+        uses: actions/checkout@v4
+      - name: 设置Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: 打包App
         run: |
           xcodebuild archive \
-            -scheme "SubtitleTranslator" \
-            -archivePath build/app.xcarchive
-      
-      - name: Export IPA
-        run: |
+            -scheme SubtitlesApp \
+            -configuration Release \
+            -archivePath SubtitlesApp.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
           xcodebuild -exportArchive \
-            -archivePath build/app.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath build/ipa
-      
-      - uses: actions/upload-artifact@v4
+            -archivePath SubtitlesApp.xcarchive \
+            -exportPath . \
+            -exportOptionsPlist <(echo '<?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>method</key>
+                <string>development</string>
+                <key>signingStyle</key>
+                <string>manual</string>
+                <key>teamID</key>
+                <string></string>
+            </dict>
+            </plist>')
+      - name: 上传安装包
+        uses: actions/upload-artifact@v4
         with:
-          name: MyApp.ipa
-          path: build/ipa/*.ipa
+          name: MyAppIPA
+          path: "*.ipa"
