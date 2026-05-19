@@ -1,0 +1,97 @@
+name: SubtitleTranslator
+options:
+  bundleIdPrefix: com.subtitletranslator
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "15.0"
+  generateEmptyDirectories: true
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+
+targets:
+  SubtitlesApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: SubtitlesApp
+        type: group
+      - path: Shared
+        type: group
+    settings:
+      base:
+        INFOPLIST_FILE: SubtitlesApp/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.subtitletranslator.app
+        CODE_SIGN_ENTITLEMENTS: SubtitlesApp/SubtitlesApp.entitlements
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: "NO"
+        SUPPORTS_MACCATALYST: "NO"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_PREVIEWS: "YES"
+    dependencies:
+      - target: SubtitleWidget
+    entitlements:
+      path: SubtitlesApp/SubtitlesApp.entitlements
+    postCompileScripts:
+      - script: |
+          echo "Build complete"
+        name: "Post Build"
+
+  BroadcastExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: BroadcastExtension
+        type: group
+      - path: Shared
+        type: group
+    settings:
+      base:
+        INFOPLIST_FILE: BroadcastExtension/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.subtitletranslator.app.broadcast
+        CODE_SIGN_ENTITLEMENTS: BroadcastExtension/BroadcastExtension.entitlements
+        TARGETED_DEVICE_FAMILY: "1"
+        SYSTEM_EXTENSION: "NO"
+    entitlements:
+      path: BroadcastExtension/BroadcastExtension.entitlements
+    dependencies: []
+
+  SubtitleWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SubtitleWidget
+        type: group
+      - path: Shared
+        type: group
+    settings:
+      base:
+        INFOPLIST_FILE: SubtitleWidget/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.subtitletranslator.app.widget
+        CODE_SIGN_ENTITLEMENTS: SubtitleWidget/SubtitleWidget.entitlements
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_KEY_NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).SubtitleWidgetBundle"
+    entitlements:
+      path: SubtitleWidget/SubtitleWidget.entitlements
+    dependencies: []
+
+schemes:
+  SubtitlesApp:
+    build:
+      targets:
+        SubtitlesApp: all
+        BroadcastExtension: all
+        SubtitleWidget: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
