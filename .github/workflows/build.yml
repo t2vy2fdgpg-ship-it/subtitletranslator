@@ -1,0 +1,27 @@
+name: Build iOS IPA
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build & Archive
+        run: |
+          xcodebuild archive \
+            -scheme "SubtitleTranslator" \
+            -archivePath build/app.xcarchive
+      
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath build/app.xcarchive \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath build/ipa
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MyApp.ipa
+          path: build/ipa/*.ipa
