@@ -1,19 +1,24 @@
-name: Build My Subtitle App
+name: Build SubtitleTranslator IPA
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: macos-latest
     steps:
-      - name: 拉取你的代码
+      - name: 拉取代码
         uses: actions/checkout@v4
-      - name: 设置Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
-      - name: 打包App
+
+      - name: 安装Tuist（如果你的项目用Tuist）
+        run: |
+          curl -Ls https://install.tuist.io | bash
+
+      - name: 生成Xcode项目（如果用Tuist）
+        run: tuist generate
+
+      - name: 编译并打包
         run: |
           xcodebuild archive \
             -scheme SubtitlesApp \
@@ -22,6 +27,7 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
+
           xcodebuild -exportArchive \
             -archivePath SubtitlesApp.xcarchive \
             -exportPath . \
@@ -33,12 +39,11 @@ jobs:
                 <string>development</string>
                 <key>signingStyle</key>
                 <string>manual</string>
-                <key>teamID</key>
-                <string></string>
             </dict>
             </plist>')
-      - name: 上传安装包
+
+      - name: 上传IPA文件
         uses: actions/upload-artifact@v4
         with:
-          name: MyAppIPA
+          name: SubtitleTranslator-IPA
           path: "*.ipa"
